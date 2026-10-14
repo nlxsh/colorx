@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="rgb(6,12,26)">
+<title>Color Trading</title>
+<style>
+  :root{
+    --bg: rgb(6,12,26);
+    --surface: rgb(13,21,38);
+    --surface-2: rgb(20,31,54);
+    --surface-3: rgb(28,42,70);
+    --line: rgb(46,64,98);
+    --line-strong: rgb(62,84,126);
+    --primary: rgb(37,99,235);
+    --primary-strong: rgb(29,78,216);
+    --primary-soft: rgb(30,58,110);
+    --text: rgb(255,255,255);
+    --muted: rgb(160,176,206);
+    --radius-lg: 1.75rem;
+    --radius-md: 1.25rem;
+    --radius-sm: 0.9rem;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+
+  html,body{ max-width:100vw; overflow-x:hidden; }
+
+  body{
+    margin:0;
+    min-height:100dvh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Segoe UI",Roboto,-apple-system,system-ui,sans-serif;
+    font-size:clamp(1rem, calc(0.95rem + 0.25vw), 1.0625rem);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  img{ max-width:100%; height:auto; display:block; }
+
+  .icon{
+    width:1.45rem; height:1.45rem; flex:none;
+    fill:none; stroke:currentColor; stroke-width:2;
+    stroke-linecap:round; stroke-linejoin:round;
+  }
+  .icon-lg{ width:2.4rem; height:2.4rem; stroke-width:2.2; }
+
+  /* ================= APP BAR ================= */
+  .appbar{
+    position:sticky; top:0; z-index:20;
+    background:var(--bg);
+    border-bottom:1px solid var(--line);
+  }
+  .appbar-inner{
+    max-width:62rem; margin:0 auto;
+    padding:clamp(0.85rem,2vw,1.2rem) clamp(1rem,4vw,2rem);
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  }
+  .brand{ display:flex; align-items:center; gap:0.85rem; min-width:0; }
+  .brand-mark{
+    display:grid; place-items:center;
+    width:2.9rem; height:2.9rem; flex:none;
+    background:var(--primary);
+    border-radius:var(--radius-sm);
+    color:var(--text);
+    box-shadow:0 0.5rem 1.2rem rgb(37 99 235 / 0.35);
+  }
+  .brand-name{
+    font-size:clamp(1.15rem, calc(1rem + 0.7vw), 1.5rem);
+    font-weight:800; letter-spacing:-0.01em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .badge{
+    flex:none;
+    padding:0.5rem 1rem;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:var(--surface-2);
+    color:var(--muted);
+    font-size:0.92rem; font-weight:800; letter-spacing:0.08em;
+  }
+
+  /* ================= LAYOUT ================= */
+  main{
+    max-width:62rem; margin:0 auto;
+    padding:clamp(1.25rem,3vw,2.25rem) clamp(1rem,4vw,2rem) clamp(3rem,7vw,5rem);
+  }
+
+  .screen{ display:none; }
+  .screen.active{ display:grid; gap:clamp(1rem,2.4vw,1.5rem); }
+
+  /* ================= CARDS ================= */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    padding:clamp(1.4rem,3.2vw,2.1rem);
+    box-shadow:0 0.75rem 2rem rgb(0 0 0 / 0.28);
+  }
+
+  .card-head{
+    display:flex; align-items:center; gap:0.8rem;
+    margin-bottom:clamp(1.1rem,2.4vw,1.5rem);
+  }
+  .card-head .icon{ color:var(--primary); }
+  .card-head h2{
+    margin:0;
+    font-size:clamp(1.15rem, calc(1rem + 0.65vw), 1.4rem);
+    font-weight:800; letter-spacing:-0.01em;
+  }
+
+  /* ================= FIELDS ================= */
+  .field{ display:grid; gap:0.55rem; margin-bottom:1.3rem; }
+  .field:last-of-type{ margin-bottom:0; }
+  .field-label{
+    font-weight:700; font-size:1rem; color:var(--muted);
+    letter-spacing:0.01em;
+  }
+  .field input{
+    width:100%;
+    font:inherit; font-weight:600;
+    color:var(--text);
+    background:var(--surface-2);
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius-md);
+    padding:clamp(0.9rem,2vw,1.05rem) clamp(1rem,2.5vw,1.2rem);
+    outline:none;
+    transition:border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+  }
+  .field input::placeholder{ color:rgb(118,134,168); font-weight:500; }
+  .field input:focus{
+    border-color:var(--primary);
+    background:var(--surface-3);
+    box-shadow:0 0 0 0.28rem rgb(37 99 235 / 0.22);
+  }
+  .hint{
+    margin:1.1rem 0 0;
+    color:var(--muted);
+    font-size:0.98rem;
+    font-weight:600;
+  }
+
+  /* ================= DROPZONE ================= */
+  .dropzone{
+    position:relative;
+    display:grid; place-items:center;
+    min-height:clamp(11rem,34vw,17rem);
+    padding:clamp(1rem,3vw,2rem);
+    background:var(--surface-2);
+    border:2px dashed var(--line-strong);
+    border-radius:var(--radius-md);
+    cursor:pointer;
+    text-align:center;
+    transition:border-color .25s ease, transform .25s ease, background-color .25s ease;
+  }
+  .dropzone:hover{ border-color:var(--primary); }
+  .dropzone:focus-visible{
+    outline:none;
+    border-color:var(--primary);
+    box-shadow:0 0 0 0.28rem rgb(37 99 235 / 0.22);
+  }
+  .dropzone.drag{
+    border-color:var(--primary);
+    background:var(--surface-3);
+    transform:scale(1.012);
+  }
+  .drop-empty{ display:grid; justify-items:center; gap:0.7rem; }
+  .drop-icon{
+    width:3.2rem; height:3.2rem;
+    fill:none; stroke:var(--primary); stroke-width:1.9;
+    stroke-linecap:round; stroke-linejoin:round;
+  }
+  .drop-title{ font-weight:800; font-size:clamp(1.05rem,calc(1rem + 0.4vw),1.2rem); }
+  .drop-sub{ color:var(--muted); font-size:1rem; font-weight:600; }
+  .drop-preview{ width:100%; }
+  .drop-preview img{
+    width:100%;
+    max-height:24rem;
+    object-fit:contain;
+    border-radius:var(--radius-sm);
+    background:rgb(8,14,28);
+  }
+
+  /* ================= BUTTONS ================= */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:0.7rem;
+    width:100%;
+    font:inherit; font-weight:800;
+    border:1px solid transparent;
+    border-radius:var(--radius-md);
+    padding:clamp(1rem,2.4vw,1.15rem) 1.6rem;
+    cursor:pointer;
+    transition:transform .16s ease, background-color .22s ease, box-shadow .22s ease, opacity .22s ease, border-color .22s ease;
+  }
+  .btn:active{ transform:scale(0.985); }
+  .btn-primary{
+    background:var(--primary);
+    color:var(--text);
+    box-shadow:0 0.7rem 1.8rem rgb(37 99 235 / 0.32);
+  }
+  .btn-primary:hover{ background:var(--primary-strong); }
+  .btn:disabled{ opacity:0.55; cursor:not-allowed; box-shadow:none; }
+  .btn-ghost{
+    background:transparent;
+    color:var(--muted);
+    border-color:var(--line-strong);
+    margin-top:1.1rem;
+  }
+  .btn-ghost:hover{ color:var(--text); border-color:var(--primary); }
+
+  /* ================= ALERT ================= */
+  .alert{
+    background:rgb(58,16,24);
+    border:1px solid rgb(150,46,58);
+    border-radius:var(--radius-md);
+    padding:1.05rem 1.3rem;
+    font-weight:700;
+    color:var(--text);
+  }
+
+  /* ================= RESULT ================= */
+  .result-head h1{
+    margin:0 0 0.35rem;
+    font-size:clamp(1.7rem, calc(1.2rem + 2.2vw), 2.5rem);
+    font-weight:800; letter-spacing:-0.02em;
+  }
+  .result-head p{ margin:0; color:var(--muted); font-size:1.05rem; font-weight:600; }
+
+  .hero{
+    background:var(--surface-2);
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius-lg);
+    padding:clamp(1.5rem,3.5vw,2.25rem);
+  }
+  .hero-top{
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
+    margin-bottom:clamp(1rem,2.5vw,1.5rem);
+  }
+  .tile-label{
+    color:var(--muted);
+    font-weight:800; font-size:0.98rem;
+    letter-spacing:0.09em; text-transform:uppercase;
+  }
+  .chip{
+    flex:none;
+    padding:0.45rem 0.95rem;
+    background:var(--surface-3);
+    border:1px solid var(--line-strong);
+    border-radius:999px;
+    color:var(--muted);
+    font-size:0.92rem; font-weight:800; letter-spacing:0.04em;
+  }
+  .hero-value{
+    display:flex; align-items:center; gap:clamp(0.85rem,2.5vw,1.4rem);
+  }
+  .hero-icon{
+    display:grid; place-items:center;
+    width:clamp(3.4rem,9vw,4.4rem);
+    height:clamp(3.4rem,9vw,4.4rem);
+    flex:none;
+    background:var(--primary);
+    border-radius:var(--radius-md);
+    color:var(--text);
+    box-shadow:0 0.6rem 1.6rem rgb(37 99 235 / 0.35);
+    transition:transform .3s cubic-bezier(.2,.7,.3,1);
+  }
+  .hero-icon.small{ transform:rotate(180deg); }
+  .hero-text{
+    font-size:clamp(2.6rem, calc(1.4rem + 6vw), 4.6rem);
+    font-weight:800;
+    letter-spacing:-0.03em;
+    line-height:1;
+  }
+
+  .detail-text{
+    margin:0;
+    font-size:clamp(1.08rem, calc(1rem + 0.5vw), 1.25rem);
+    font-weight:600;
+    line-height:1.65;
+  }
+
+  /* ================= OVERLAY ================= */
+  .overlay{
+    position:fixed; inset:0; z-index:50;
+    display:grid; place-items:center;
+    background:rgb(6 12 26 / 0.95);
+    padding:1.5rem;
+  }
+  .overlay-inner{ display:grid; justify-items:center; gap:1.35rem; text-align:center; }
+  .spinner{
+    width:4.2rem; height:4.2rem;
+    border-radius:50%;
+    border:0.45rem solid var(--surface-3);
+    border-top-color:var(--primary);
+    animation:spin 0.9s linear infinite;
+  }
+  .overlay-title{ font-size:1.3rem; font-weight:800; }
+  .overlay-sub{ color:var(--muted); font-size:1rem; font-weight:600; }
+
+  /* ================= ANIMATION ================= */
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes fadeUp{
+    from{ opacity:0; transform:translateY(1.1rem); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @keyframes popIn{
+    from{ opacity:0; transform:scale(0.95); }
+    to{ opacity:1; transform:scale(1); }
+  }
+
+  .screen.active > *{ animation:fadeUp .5s cubic-bezier(.2,.7,.3,1) both; }
+  .screen.active > *:nth-child(1){ animation-delay:.04s; }
+  .screen.active > *:nth-child(2){ animation-delay:.1s; }
+  .screen.active > *:nth-child(3){ animation-delay:.16s; }
+  .screen.active > *:nth-child(4){ animation-delay:.22s; }
+  .screen.active > *:nth-child(5){ animation-delay:.28s; }
+
+  .hero-value, .hero-top{ animation:popIn .45s cubic-bezier(.2,.7,.3,1) both .16s; }
+
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M3 20h18"/>
+          <rect x="6" y="9" width="3" height="7" rx="1"/>
+          <rect x="13" y="4" width="3" height="8" rx="1"/>
+        </svg>
+      </span>
+      <span class="brand-name">Color Trading</span>
+    </div>
+    <span class="badge">1M</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ INPUT SCREEN ============ -->
+  <section id="screenInput" class="screen active">
+
+    <div class="card">
+      <div class="card-head">
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M15 7a4 4 0 0 1 4 4v1a3 3 0 0 1 0 6h-1"/>
+          <path d="M9 7a4 4 0 0 0-4 4v1a3 3 0 0 0 0 6h1"/>
+          <circle cx="12" cy="12" r="2.5"/>
+        </svg>
+        <h2>API Setup</h2>
+      </div>
+
+      <label class="field">
+        <span class="field-label">Gemini API Key</span>
+        <input id="apiKey" type="password" placeholder="AIza..." autocomplete="off" spellcheck="false">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Model</span>
+        <input id="model" type="text" value="gemini-3.5-flash" spellcheck="false">
+      </label>
+
+      <p class="hint">Key is saved on this device.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <svg class="icon" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <circle cx="9" cy="9" r="1.6"/>
+          <path d="m21 16-4.5-4.5L7 21"/>
+        </svg>
+        <h2>Upload Chart</h2>
+      </div>
+
+      <div id="dropZone" class="dropzone" tabindex="0" role="button" aria-label="Upload chart image">
+        <input id="fileInput" type="file" accept="image/*" hidden>
+
+        <div id="dropEmpty" class="drop-empty">
+          <svg class="drop-icon" viewBox="0 0 24 24">
+            <path d="M12 16V4"/>
+            <path d="m7 9 5-5 5 5"/>
+            <path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/>
+          </svg>
+          <span class="drop-title">Drop chart image here</span>
+          <span class="drop-sub">PNG or JPG</span>
+        </div>
+
+        <div id="dropPreview" class="drop-preview" hidden>
+          <img id="previewImg" alt="Chart preview">
+        </div>
+      </div>
+
+      <button id="clearBtn" class="btn btn-ghost" type="button" hidden>
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M3 6h18"/>
+          <path d="M8 6V4h8v2"/>
+          <path d="M6 6v14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6"/>
+        </svg>
+        Remove image
+      </button>
+    </div>
+
+    <div id="errorBox" class="alert" hidden></div>
+
+    <button id="analyzeBtn" class="btn btn-primary" type="button">
+      <svg class="icon" viewBox="0 0 24 24">
+        <path d="M12 3v3"/>
+        <path d="M12 18v3"/>
+        <path d="M3 12h3"/>
+        <path d="M18 12h3"/>
+        <circle cx="12" cy="12" r="4"/>
+      </svg>
+      Analyze Market
+    </button>
+
+  </section>
+
+  <!-- ============ RESULT SCREEN ============ -->
+  <section id="screenResult" class="screen">
+
+    <div class="result-head">
+      <h1>Analysis Result</h1>
+      <p>Next 1-minute candle prediction</p>
+    </div>
+
+    <div class="hero">
+      <div class="hero-top">
+        <span class="tile-label">Direction</span>
+        <span class="chip">NEXT 1M</span>
+      </div>
+      <div class="hero-value">
+        <span id="resIcon" class="hero-icon">
+          <svg class="icon icon-lg" viewBox="0 0 24 24">
+            <path d="M12 19V5"/>
+            <path d="m5 12 7-7 7 7"/>
+          </svg>
+        </span>
+        <span id="resDirection" class="hero-text">--</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M3 17l5-6 4 3 5-7 4 4"/>
+          <path d="M3 21h18"/>
+        </svg>
+        <h2>Signal Details</h2>
+      </div>
+      <p id="resDetails" class="detail-text">--</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <svg class="icon" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 7v5l3.5 2"/>
+        </svg>
+        <h2>Expiry Time</h2>
+      </div>
+      <p id="resExpiry" class="detail-text">--</p>
+    </div>
+
+    <button id="backBtn" class="btn btn-primary" type="button">
+      <svg class="icon" viewBox="0 0 24 24">
+        <path d="M19 12H5"/>
+        <path d="m12 19-7-7 7-7"/>
+      </svg>
+      New Analysis
+    </button>
+
+  </section>
+
+</main>
+
+<!-- ============ LOADING OVERLAY ============ -->
+<div id="overlay" class="overlay" hidden>
+  <div class="overlay-inner">
+    <div class="spinner"></div>
+    <div class="overlay-title">Analyzing chart</div>
+    <div class="overlay-sub">Reading the sequence pattern</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY_STORE = "ct_api_key";
+  var MODEL_STORE = "ct_model";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var apiKeyInput = $("apiKey");
+  var modelInput = $("model");
+  var dropZone = $("dropZone");
+  var fileInput = $("fileInput");
+  var dropEmpty = $("dropEmpty");
+  var dropPreview = $("dropPreview");
+  var previewImg = $("previewImg");
+  var clearBtn = $("clearBtn");
+  var analyzeBtn = $("analyzeBtn");
+  var backBtn = $("backBtn");
+  var errorBox = $("errorBox");
+  var overlay = $("overlay");
+
+  var screenInput = $("screenInput");
+  var screenResult = $("screenResult");
+
+  var resIcon = $("resIcon");
+  var resDirection = $("resDirection");
+  var resDetails = $("resDetails");
+  var resExpiry = $("resExpiry");
+
+  var state = { base64: null, mime: null };
+
+  /* ---------- Persistence ---------- */
+  try {
+    var savedKey = localStorage.getItem(KEY_STORE);
+    var savedModel = localStorage.getItem(MODEL_STORE);
+    if (savedKey) apiKeyInput.value = savedKey;
+    if (savedModel) modelInput.value = savedModel;
+  } catch (e) { /* storage unavailable */ }
+
+  apiKeyInput.addEventListener("change", function () {
+    try { localStorage.setItem(KEY_STORE, apiKeyInput.value.trim()); } catch (e) {}
+  });
+  modelInput.addEventListener("change", function () {
+    try { localStorage.setItem(MODEL_STORE, modelInput.value.trim()); } catch (e) {}
+  });
+
+  /* ---------- Helpers ---------- */
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.hidden = false;
+  }
+  function hideError() {
+    errorBox.hidden = true;
+    errorBox.textContent = "";
+  }
+  function showScreen(name) {
+    screenInput.classList.toggle("active", name === "input");
+    screenResult.classList.toggle("active", name === "result");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function setLoading(on) {
+    overlay.hidden = !on;
+    analyzeBtn.disabled = on;
+  }
+
+  /* ---------- File handling ---------- */
+  function readFile(file) {
+    if (!file) return;
+    if (!file.type || file.type.indexOf("image/") !== 0) {
+      showError("Please select a valid image file.");
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var dataUrl = String(reader.result);
+      var parts = dataUrl.split(",");
+      var mimeMatch = parts[0].match(/:(.*?);/);
+      state.base64 = parts[1];
+      state.mime = mimeMatch ? mimeMatch[1] : "image/png";
+      previewImg.src = dataUrl;
+      dropEmpty.hidden = true;
+      dropPreview.hidden = false;
+      clearBtn.hidden = false;
+      hideError();
+    };
+    reader.onerror = function () { showError("Could not read the image file."); };
+    reader.readAsDataURL(file);
+  }
+
+  function clearFile() {
+    state.base64 = null;
+    state.mime = null;
+    fileInput.value = "";
+    previewImg.removeAttribute("src");
+    dropEmpty.hidden = false;
+    dropPreview.hidden = true;
+    clearBtn.hidden = true;
+  }
+
+  dropZone.addEventListener("click", function () { fileInput.click(); });
+  dropZone.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
+
+  fileInput.addEventListener("change", function () {
+    readFile(fileInput.files && fileInput.files[0]);
+  });
+
+  ["dragenter", "dragover"].forEach(function (evt) {
+    dropZone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      dropZone.classList.add("drag");
+    });
+  });
+
+  ["dragleave", "drop"].forEach(function (evt) {
+    dropZone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      dropZone.classList.remove("drag");
+    });
+  });
+
+  dropZone.addEventListener("drop", function (e) {
+    var dt = e.dataTransfer;
+    if (dt && dt.files && dt.files.length) readFile(dt.files[0]);
+  });
+
+  clearBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    clearFile();
+  });
+
+  /* ---------- Prompt + schema ---------- */
+  var PROMPT =
+    "You are an expert 1-minute color trading chart analyst.\n" +
+    "Analyze the uploaded chart image carefully. The chart contains a serial number column, " +
+    "a result column with RED, GREEN, VIOLET colors, and a size column with BIG / SMALL.\n" +
+    "Steps:\n" +
+    "1. Read the visible sequence from oldest to newest.\n" +
+    "2. Identify streaks, alternation, repeating blocks and the dominant trend in the size column.\n" +
+    "3. Predict ONLY the direction of the next 1-minute candle: BIG or SMALL.\n" +
+    "Return only valid JSON, no markdown, no extra text:\n" +
+    "{\n" +
+    '  "direction": "BIG" or "SMALL",\n' +
+    '  "signalDetails": "one short sentence, max 20 words, explaining the pattern reason",\n' +
+    '  "expiryTime": "expiry for the next 1-minute candle, e.g. Next candle - 1 minute (60s)"\n' +
+    "}";
+
+  var SCHEMA = {
+    type: "OBJECT",
+    properties: {
+      direction: { type: "STRING", enum: ["BIG", "SMALL"] },
+      signalDetails: { type: "STRING" },
+      expiryTime: { type: "STRING" }
+    },
+    required: ["direction", "signalDetails", "expiryTime"],
+    propertyOrdering: ["direction", "signalDetails", "expiryTime"]
+  };
+
+  /* ---------- Parsing ---------- */
+  function stripFences(text) {
+    var t = String(text || "").trim();
+    t = t.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    var start = t.indexOf("{");
+    var end = t.lastIndexOf("}");
+    if (start !== -1 && end !== -1 && end > start) t = t.slice(start, end + 1);
+    return t;
+  }
+
+  function normalizeDirection(value) {
+    var v = String(value || "").toUpperCase();
+    return v.indexOf("BIG") !== -1 ? "BIG" : "SMALL";
+  }
+
+  /* ---------- Render ---------- */
+  function renderResult(data) {
+    var direction = normalizeDirection(data.direction);
+
+    resDirection.textContent = direction;
+    resIcon.classList.toggle("small", direction === "SMALL");
+
+    resDetails.textContent = String(data.signalDetails || "").trim() || "Pattern read complete.";
+    resExpiry.textContent = String(data.expiryTime || "").trim() || "Next candle - 1 minute (60s)";
+
+    [resIcon, resDirection, resDetails, resExpiry].forEach(function (el) {
+      el.style.animation = "none";
+      void el.offsetWidth;
+      el.style.animation = "";
+    });
+  }
+
+  /* ---------- Analyze ---------- */
+  function analyze() {
+    var key = apiKeyInput.value.trim();
+    var model = modelInput.value.trim() || "gemini-3.5-flash";
+
+    if (!key) { showError("Enter your Gemini API key."); return; }
+    if (!state.base64) { showError("Upload a chart image first."); return; }
+
+    try {
+      localStorage.setItem(KEY_STORE, key);
+      localStorage.setItem(MODEL_STORE, model);
+    } catch (e) {}
+
+    hideError();
+    setLoading(true);
+
+    var url = "https://generativelanguage.googleapis.com/v1beta/models/" +
+      encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(key);
+
+    var payload = {
+      contents: [{
+        role: "user",
+        parts: [
+          { text: PROMPT },
+          { inline_data: { mime_type: state.mime || "image/png", data: state.base64 } }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        responseMimeType: "application/json",
+        responseSchema: SCHEMA
+      }
+    };
+
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) {
+        return res.json().then(function (json) { return { ok: res.ok, json: json }; });
+      })
+      .then(function (result) {
+        if (!result.ok) {
+          var msg = result.json && result.json.error && result.json.error.message;
+          throw new Error(msg || "Request failed. Check your API key and model name.");
+        }
+        var candidate = result.json.candidates && result.json.candidates[0];
+        var parts = candidate && candidate.content && candidate.content.parts;
+        var text = parts ? parts.map(function (p) { return p.text || ""; }).join("") : "";
+        if (!text) throw new Error("No analysis returned. Try another chart image.");
+
+        var data = JSON.parse(stripFences(text));
+        renderResult(data);
+        setLoading(false);
+        showScreen("result");
+      })
+      .catch(function (err) {
+        setLoading(false);
+        var message = err && err.message ? err.message : "Analysis failed.";
+        if (message.indexOf("Failed to fetch") !== -1) {
+          message = "Network error. Check your internet connection.";
+        }
+        showError(message);
+      });
+  }
+
+  analyzeBtn.addEventListener("click", analyze);
+  backBtn.addEventListener("click", function () { showScreen("input"); });
+
+})();
+</script>
+
+</body>
+</html>
